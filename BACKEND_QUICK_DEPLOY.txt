@@ -1,0 +1,205 @@
+================================================================================
+          BACKEND ONLY DEPLOYMENT - QUICK START (5 MINUTES)
+================================================================================
+
+YOUR TASK: Deploy FastAPI backend to Google Cloud
+
+RESULT: Your API will be live at: https://shield-backend-xxxxx.a.run.app
+
+================================================================================
+PREREQUISITES - CHECK THESE:
+================================================================================
+
+☐ Google Cloud account (free with $300 credit)
+☐ Google Cloud project created
+☐ Cloud Run service enabled
+☐ Cloud Build service enabled
+
+If not done yet:
+1. Go to: https://console.cloud.google.com
+2. Create project: "shield-os-backend"
+3. Search "Cloud Run" → Enable
+4. Search "Cloud Build" → Enable
+
+================================================================================
+DEPLOY COMMAND (COPY & PASTE):
+================================================================================
+
+STEP 1: Open terminal/command prompt
+
+STEP 2: Navigate to your project folder
+--------
+cd /path/to/Shield.OS
+
+On Windows example:
+cd C:\Users\YourName\Desktop\Shield.OS
+
+STEP 3: Run this exact command
+--------
+gcloud run deploy shield-backend --source . --platform managed --region us-central1 --timeout 900
+
+STEP 4: When asked - Answer: y
+
+STEP 5: When region prompt - Just press Enter
+
+DONE! ✅ You'll get a URL like:
+--------
+https://shield-backend-abc123-us-central1.a.run.app
+
+================================================================================
+THAT'S IT! YOUR BACKEND IS DEPLOYED!
+================================================================================
+
+What you now have:
+✅ API running 24/7 on Google Cloud
+✅ Accessible worldwide
+✅ Auto-scales for traffic
+✅ $0 for testing/demo
+✅ HTTPS security automatic
+✅ 2 ML models loaded
+✅ Ready for any frontend
+
+================================================================================
+TEST YOUR BACKEND (QUICK CHECK):
+================================================================================
+
+Option 1: Open in Browser
+--------
+https://your-backend-url/docs
+
+You'll see interactive Swagger UI to test endpoints
+
+Option 2: Use curl (command line)
+--------
+curl https://your-backend-url/health
+
+Should return:
+{
+  "status": "operational",
+  "logistic_regression_loaded": true,
+  "xgboost_loaded": true
+}
+
+================================================================================
+IMPORTANT URLS TO SAVE:
+================================================================================
+
+Backend API:
+https://shield-backend-xxxxx-us-central1.a.run.app
+
+API Documentation:
+https://shield-backend-xxxxx-us-central1.a.run.app/docs
+
+Use these in your frontend or applications!
+
+================================================================================
+USING YOUR API (FROM ANY FRONTEND):
+================================================================================
+
+Python Example:
+--------
+import requests
+
+url = "https://shield-backend-xxxxx-us-central1.a.run.app/predict/single"
+data = {
+    "Amount": 150.0,
+    "Time": 3600,
+    "Distance_From_Home": 30.0,
+    "selected_model": "xgboost"
+}
+
+response = requests.post(url, json=data)
+result = response.json()
+
+print(f"Fraud Probability: {result['fraud_probability']}")
+print(f"Status: {result['status']}")
+
+JavaScript Example:
+--------
+const url = "https://shield-backend-xxxxx-us-central1.a.run.app/predict/single";
+const data = {
+    Amount: 150.0,
+    Time: 3600,
+    Distance_From_Home: 30.0,
+    selected_model: "xgboost"
+};
+
+const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+});
+
+const result = await response.json();
+console.log(result);
+
+================================================================================
+AVAILABLE ENDPOINTS:
+================================================================================
+
+1. Health Check
+   GET /health
+   Purpose: Check if backend is running
+   
+2. Single Prediction
+   POST /predict/single
+   Purpose: Predict one transaction
+   
+3. Batch Prediction
+   POST /predict/batch
+   Purpose: Upload CSV and score all transactions
+
+All documented at: /docs endpoint
+
+================================================================================
+IF SOMETHING GOES WRONG:
+================================================================================
+
+Problem: "Deployment failed"
+Fix: Make sure Dockerfile exists in your project root
+
+Problem: "Models not found"
+Fix: Check backend/ folder has both .pkl files
+
+Problem: "Application error"
+Fix: Go to Cloud Run console → Logs tab → read error
+
+Problem: Still confused?
+Fix: Read BACKEND_ONLY_DEPLOYMENT.md (detailed guide)
+
+================================================================================
+COSTS:
+================================================================================
+
+Free Tier: 2 million requests/month
+Your cost: Probably $0 (testing/demo)
+
+If high usage: ~$0.000024 per request
+
+Example: 100,000 requests = $2.40
+
+================================================================================
+NEXT STEPS:
+================================================================================
+
+1. ✅ Deploy (use command above)
+2. ✅ Test (open /docs endpoint)
+3. ✅ Save URLs (you'll need them)
+4. ✅ Connect frontend (use the API URL)
+5. ✅ Share (send URL to team)
+
+================================================================================
+THAT'S ALL! 🚀
+================================================================================
+
+Your backend is now:
+- Live on the internet
+- Accessible worldwide
+- Running 24/7
+- Ready for production
+
+For detailed guide: Read BACKEND_ONLY_DEPLOYMENT.md
+
+Congratulations! 🎉
+
+================================================================================
