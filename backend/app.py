@@ -24,17 +24,28 @@ BACKEND_DIR = Path(__file__).parent
 lr_model = None
 xgb_model = None
 
-try:
-    lr_model = joblib.load(BACKEND_DIR / "logistic_regression.pkl")
-    print("✓ Logistic Regression model loaded")
-except FileNotFoundError as e:
-    print(f"⚠ Logistic Regression not found: {e}")
+print(f"Loading models from: {BACKEND_DIR}")
+print(f"Files in directory: {list(BACKEND_DIR.glob('*.pkl'))}")
 
 try:
-    xgb_model = joblib.load(BACKEND_DIR / "xgboost_model.pkl")
-    print("✓ XGBoost model loaded")
-except FileNotFoundError as e:
-    print(f"⚠ XGBoost model not found: {e}")
+    lr_path = BACKEND_DIR / "logistic_regression.pkl"
+    if lr_path.exists():
+        lr_model = joblib.load(lr_path)
+        print("✓ Logistic Regression model loaded successfully")
+    else:
+        print(f"⚠ Logistic Regression file not found at {lr_path}")
+except Exception as e:
+    print(f"⚠ Error loading Logistic Regression: {e}")
+
+try:
+    xgb_path = BACKEND_DIR / "xgboost_model.pkl"
+    if xgb_path.exists():
+        xgb_model = joblib.load(xgb_path)
+        print("✓ XGBoost model loaded successfully")
+    else:
+        print(f"⚠ XGBoost file not found at {xgb_path}")
+except Exception as e:
+    print(f"⚠ Error loading XGBoost: {e}")
 
 # Request/Response models
 class TransactionRequest(BaseModel):
