@@ -3,26 +3,21 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy model files
-COPY backend/xgboost_model.pkl /app/
-COPY backend/logistic_regression.pkl /app/
+COPY backend/xgboost_model.pkl ./
+COPY backend/logistic_regression.pkl ./
 
 # Copy backend app
-COPY backend/app.py /app/
+COPY backend/app.py ./
 
 # Copy requirements
-COPY requirements.txt /app/
+COPY requirements.txt ./
 
-# Install dependencies with retry and specific build tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt-get remove -y build-essential \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Expose port
 EXPOSE 8000
 
 # Run the backend server
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD exec uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
