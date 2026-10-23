@@ -23,17 +23,17 @@ def get_active_api():
         response = requests.get(f"{LOCAL_API_URL}/health", timeout=2)
         if response.status_code == 200:
             return LOCAL_API_URL, "Local"
-    except:
-        pass
+    except Exception as e:
+        st.write(f"Local check failed: {e}")
     
     try:
-        response = requests.get(f"{CLOUD_API_URL}/health", timeout=2)
+        response = requests.get(f"{CLOUD_API_URL}/health", timeout=5, verify=False)
         if response.status_code == 200:
             return CLOUD_API_URL, "Cloud"
-    except:
-        pass
+    except Exception as e:
+        st.write(f"Cloud check failed: {e}")
     
-    return LOCAL_API_URL, "Offline"
+    return CLOUD_API_URL, "Cloud"  # Default to cloud
 
 # Get active API on startup
 API_URL, api_status = get_active_api()
@@ -62,13 +62,14 @@ if 'stream_active' not in st.session_state:
     st.session_state.stream_active = False
 
 # Create tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Single Prediction", 
     "Live Stream Simulator", 
     "Batch CSV Audit",
     "Model Comparison",
     "Data Insights",
-    "Fraud Alerts"
+    "Fraud Alerts",
+    "Model Testing"
 ])
 
 # ============ TAB 1: Single Prediction ============
@@ -446,6 +447,201 @@ with tab6:
     if st.button("🔔 Send Test Alert"):
         st.success("✅ Test alert sent successfully!")
         st.info("Alert would be: High fraud probability detected on transaction #TX-2024-98765. Amount: $3,500. Distance: 600km. Recommendation: Review immediately.")
+
+# ============ TAB 7: Model Testing & Performance ============
+with tab7:
+    st.subheader("🧪 Model Testing with Synthetic Data")
+    
+    # Generate synthetic test dataset
+    @st.cache_data
+    def generate_test_data(n_samples=100):
+        np.random.seed(42)
+        legitimate = []
+        fraudulent = []
+        
+        # Generate legitimate transactions
+        for _ in range(int(n_samples * 0.95)):
+            time = np.random.uniform(0, 172800)
+            amount = np.random.exponential(50)
+            features = [time] + list(np.random.normal(0, 1, 28)) + [amount]
+            legitimate.append(features)
+        
+        # Generate fraudulent transactions
+        for _ in range(int(n_samples * 0.05)):
+            time = np.random.uniform(0, 172800)
+            amount = np.random.exponential(200)
+            features = [time] + list(np.random.normal(2, 2, 28)) + [amount]
+            fraudulent.append(features)
+        
+        all_data = np.vstack([legitimate, fraudulent])
+        labels = np.hstack([np.zeros(len(legitimate)), np.ones(len(fraudulent))])
+        
+        # Shuffle
+        indices = np.random.permutation(len(all_data))
+        return all_data[indices], labels[indices]
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        test_size = st.number_input("Test Dataset Size", 50, 500, 100, 10)
+    
+    with col2:
+        if st.button("🧪 Test Models with Synthetic Data"):
+            st.session_state.test_run = True
+    
+    if st.session_state.get('test_run', False):
+        # Generate test data
+        X_test, y_test = generate_test_data(test_size)
+        
+        # Test both models
+        xgb_results = []
+        logistic_results = []
+        
+        for i, sample in enumerate(X_test[:20]):  # Test first 20
+            try:
+                payload = {
+                    "Amount": float(sample[-1]),
+                    "Time": float(sample[0]),
+                    "Distance_From_Home": 0.0,
+                    "selected_model": "xgboost",
+                }
+                
+                response = requests.post(f"{API_URL}/predict/single", json=payload, timeout=5)
+                if response.status_code == 200:
+                    result = response.json()
+                    xgb_results.append({
+                        "actual": "Fraud" if y_test[i] == 1 else "Legitimate",
+                        "predicted": "Fraud" if result['is_fraud'] else "Legitimate",
+                        "probability": result['fraud_probability'],
+                        "correct": (y_test[i] == 1) == result['is_fraud']
+                    })
+            except:
+                pass
+        
+        if xgb_results:
+            st.success(f"✅ Tested {len(xgb_results)} samples")
+            
+            # Display test results
+            col1, col2, col3 = st.columns(3)
+            
+            correct = sum([1 for r in xgb_results if r['correct']])
+            accuracy = correct / len(xgb_results) * 100
+            
+            col1.metric("Accuracy", f"{accuracy:.1f}%")
+            col2.metric("Total Tests", len(xgb_results))
+            col3.metric("Correct", f"{correct}/{len(xgb_results)}")
+            
+            st.divider()
+            
+            # Test results table
+            st.subheader("📊 Test Results")
+            df_results = pd.DataFrame(xgb_results)
+            st.dataframe(df_results, use_container_width=True, hide_index=True)
+            
+            # Performance over samples
+            st.subheader("📈 Model Performance Over Test Samples")
+            
+            cumulative_correct = []
+            cumulative_accuracy = []
+            
+            running_sum = 0
+            for i, result in enumerate(xgb_results):
+                running_sum += 1 if result['correct'] else 0
+                cumulative_accuracy.append((running_sum / (i + 1)) * 100)
+                cumulative_correct.append(running_sum)
+            
+            fig = px.line(
+                x=list(range(1, len(xgb_results) + 1)),
+                y=cumulative_accuracy,
+                title="Cumulative Accuracy Over Test Samples",
+                markers=True,
+                labels={"x": "Sample Number", "y": "Cumulative Accuracy (%)"}
+            )
+            fig.update_traces(line=dict(color='#1f77b4', width=3), marker=dict(size=8))
+            fig.update_layout(height=400)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Classification results breakdown
+            st.subheader("🎯 Classification Breakdown")
+            
+            true_positive = sum([1 for r in xgb_results if r['actual'] == 'Fraud' and r['predicted'] == 'Fraud'])
+            true_negative = sum([1 for r in xgb_results if r['actual'] == 'Legitimate' and r['predicted'] == 'Legitimate'])
+            false_positive = sum([1 for r in xgb_results if r['actual'] == 'Legitimate' and r['predicted'] == 'Fraud'])
+            false_negative = sum([1 for r in xgb_results if r['actual'] == 'Fraud' and r['predicted'] == 'Legitimate'])
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("True Positive", true_positive)
+            col2.metric("True Negative", true_negative)
+            col3.metric("False Positive", false_positive)
+            col4.metric("False Negative", false_negative)
+            
+            # Confusion matrix visualization
+            st.subheader("🔀 Test Confusion Matrix")
+            
+            cm_test = np.array([[true_negative, false_positive], [false_negative, true_positive]])
+            
+            fig = go.Figure(data=go.Heatmap(
+                z=cm_test,
+                x=['Predicted Legitimate', 'Predicted Fraud'],
+                y=['Actual Legitimate', 'Actual Fraud'],
+                text=cm_test,
+                texttemplate='%{text}',
+                colorscale='Viridis',
+                hovertemplate='%{x}<br>%{y}<br>Count: %{z}<extra></extra>'
+            ))
+            
+            fig.update_layout(
+                title="Test Confusion Matrix",
+                height=400,
+                xaxis_title="Predicted Label",
+                yaxis_title="True Label"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Performance Metrics
+            st.subheader("📊 Detailed Performance Metrics")
+            
+            if true_positive + false_positive > 0:
+                precision = true_positive / (true_positive + false_positive)
+            else:
+                precision = 0
+            
+            if true_positive + false_negative > 0:
+                recall = true_positive / (true_positive + false_negative)
+            else:
+                recall = 0
+            
+            if true_negative + false_positive > 0:
+                specificity = true_negative / (true_negative + false_positive)
+            else:
+                specificity = 0
+            
+            if precision + recall > 0:
+                f1 = 2 * (precision * recall) / (precision + recall)
+            else:
+                f1 = 0
+            
+            metrics_col1, metrics_col2 = st.columns(2)
+            
+            with metrics_col1:
+                st.metric("Precision", f"{precision:.2%}")
+                st.metric("Recall", f"{recall:.2%}")
+            
+            with metrics_col2:
+                st.metric("Specificity", f"{specificity:.2%}")
+                st.metric("F1-Score", f"{f1:.3f}")
+            
+            # Export results
+            if st.button("📥 Export Test Results as CSV"):
+                csv = df_results.to_csv(index=False)
+                st.download_button(
+                    label="Download Results",
+                    data=csv,
+                    file_name="model_test_results.csv",
+                    mime="text/csv"
+                )
+        else:
+            st.error("❌ Could not test models. Check API connection.")
 
 # Footer
 st.divider()
