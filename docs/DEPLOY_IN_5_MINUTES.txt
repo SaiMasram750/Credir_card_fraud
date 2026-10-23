@@ -1,0 +1,74 @@
+================================================================================
+                     DEPLOY IN 5 MINUTES FROM GITHUB
+================================================================================
+
+Your repository is ready! Deploy to Google Cloud in 5 simple steps.
+
+================================================================================
+STEP-BY-STEP:
+================================================================================
+
+STEP 1: Open Google Cloud Console
+--------
+Go to: https://console.cloud.google.com
+
+STEP 2: Open Cloud Shell
+--------
+Click >_ icon (top right corner)
+
+STEP 3: Clone Your Repository
+--------
+git clone https://github.com/SaiMasram750/Credir_card_fraud.git
+cd Credir_card_fraud
+
+STEP 4: Deploy Backend
+--------
+gcloud run deploy shield-backend --source . --platform managed --region us-central1 --timeout 900
+
+STEP 5: Answer Prompts
+--------
+Prompt 1: "Allow unauthenticated?" → Type: y → Press Enter
+Prompt 2: "Which region?" → Just Press Enter
+
+WAIT 5-10 MINUTES...
+
+✅ DONE! Get your URL from the output!
+
+================================================================================
+YOUR URL WILL BE:
+================================================================================
+
+https://shield-backend-xxxxx-us-central1.a.run.app
+
+Save this URL!
+
+================================================================================
+TEST IT:
+================================================================================
+
+Open in browser:
+https://your-backend-url/docs
+
+You'll see interactive API documentation!
+
+================================================================================
+THE EXACT COMMANDS (COPY & PASTE):
+================================================================================
+
+git clone https://github.com/SaiMasram750/Credir_card_fraud.git
+cd Credir_card_fraud
+gcloud run deploy shield-backend --source . --platform managed --region us-central1 --timeout 900
+
+Then:
+Answer: y
+Answer: Press Enter
+
+================================================================================
+THAT'S IT! 🎉
+================================================================================
+
+Your backend is now live on Google Cloud!
+
+Accessible from anywhere in the world!
+
+================================================================================
