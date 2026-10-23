@@ -11,7 +11,41 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_auc_sco
 st.set_page_config(page_title="Shield.OS - Fraud Detection", layout="wide", initial_sidebar_state="expanded")
 st.title("🛡️ Shield.OS – Fraud Detection System")
 
-API_URL = "http://127.0.0.1:8000"
+# API Configuration with fallback
+LOCAL_API_URL = "http://127.0.0.1:8000"
+CLOUD_API_URL = "https://shield-backend-737468115000.us-central1.run.app"
+API_URL = LOCAL_API_URL
+
+# Check which API is available
+@st.cache_data(ttl=60)
+def get_active_api():
+    try:
+        response = requests.get(f"{LOCAL_API_URL}/health", timeout=2)
+        if response.status_code == 200:
+            return LOCAL_API_URL, "Local"
+    except:
+        pass
+    
+    try:
+        response = requests.get(f"{CLOUD_API_URL}/health", timeout=2)
+        if response.status_code == 200:
+            return CLOUD_API_URL, "Cloud"
+    except:
+        pass
+    
+    return LOCAL_API_URL, "Offline"
+
+# Get active API on startup
+API_URL, api_status = get_active_api()
+
+# Display API status in sidebar
+with st.sidebar:
+    if api_status == "Local":
+        st.success(f"✅ Connected to Local Backend")
+    elif api_status == "Cloud":
+        st.info(f"☁️ Using Cloud Backend (Fallback)")
+    else:
+        st.warning(f"⚠️ Backend Offline - Using Local (may not work)")
 
 # Sidebar for model selection
 st.sidebar.header("⚙️ Configuration")
